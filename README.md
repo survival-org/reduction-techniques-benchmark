@@ -13,7 +13,9 @@ This benchmark uses [mlr3](https://mlr3.mlr-org.com/) for task and learner setup
     - Production mode is meant for the actual experiment
     - "Default" case is equivalent to production mode, just using a different name.
 - `benchmark.R`: Main entrypoint -- defines the experiment and creates batchtools registry (sourcing other scripts).
-  - `tasks.R`: Loads datasets from `datasets/`, converts them to mlr3 tasks, and creates resamplings which are saved to `resamplings`
+  - `tasks.R`: Loads datasets from `datasets/`, converts them to mlr3 tasks
+      - creates resamplings which are saved to `resamplings`, and if stored resamplings exist there it will use these instead of recreating them
+        (this ensures robustness with regard to all learners being guaranteed to see the same data / resampling splits)
   - `learners.R: Defines base learner and tuner configuration including preprocessing pipelines and tuning budget.
   - `registries/`: Holds batchtools registries, separately for configuration modes.
 - `submit.R`: Script to submit and manage experiment jobs.
