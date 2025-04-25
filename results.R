@@ -1,7 +1,12 @@
 library(mlr3proba)
 
-bmr_harrell_c = mlr3batchmark::reduceResultsBatchmark(findTagged("harrell_c"))
+bmr_harrell_c = mlr3batchmark::reduceResultsBatchmark(ijoin(
+  findDone(),
+  findTagged("harrell_c")
+))
 bmr_isbs = mlr3batchmark::reduceResultsBatchmark(findTagged("isbs"))
+
+mlr3tuning::extract_inner_tuning_archives(bmr_harrell_c)
 
 # fmt: skip
 eval_measures = list(

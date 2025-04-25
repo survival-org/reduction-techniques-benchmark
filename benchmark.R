@@ -72,17 +72,9 @@ for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan", id = "kaplan"),
 
-    NEL = bl("surv.nelson", id = "nelson"),
-
     GLMN = wrap_auto_tune(
       bl("surv.cv_glmnet", id = "cv_glmnet", .encode = TRUE),
       cv_glmnet.alpha = p_dbl(0, 1)
-    ),
-
-    Pen = wrap_auto_tune(
-      bl("surv.penalized", id = "penalized"),
-      penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
-      penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
     ),
 
     RFSRC = wrap_auto_tune(
@@ -130,22 +122,6 @@ for (measure in measures) {
   )
 
   mlr3misc::imap(learners, function(l, id) l$id = id)
-
-  cli::cli_h2("Cleaning up and adding to registry")
-
-  if (measure$id == "isbs") {
-    cli::cli_alert_warning("Skipping {.val MBSTAFT} for ISBS measure!")
-    learners$MBSTAFT = NULL
-
-    cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
-    learners$RRT = NULL
-
-    cli::cli_alert_warning("Skipping {.val XGBAFT} for ISBS measure!")
-    learners$XGBAFT = NULL
-
-    cli::cli_alert_warning("Skipping {.val SSVM} for ISBS measure!")
-    learners$SSVM = NULL
-  }
 
   # custom grid design (with instantiated resamplings)
   grid = mlr3misc::cross_join(
