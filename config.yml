@@ -1,0 +1,69 @@
+# Default config: Should become production mode
+default:
+  reg_name: "default"
+  reg_dir: !expr here::here("registries", reg_name)
+  result_path: !expr here::here("results", reg_name)
+  seed: 123
+  learners:
+    threads: 1
+  outer_eval:
+    resampling: "repeated_cv"
+    folds: 3
+    repeats: "auto" # Only applicable if resampling is "repeated_cv". Set to "auto" for hybrid approach.
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
+    min_obs: 30
+  tuning:
+    resampling: "repeated_cv"
+    folds: 3
+    repeats: 2 # Only applicable if resampling is "repeated_cv".
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
+  fallback:
+    inner: true
+    outer: true
+  store:
+    tuning_instance: true
+    benchmark_result: false
+    models: false
+  budget:
+    evals_constant: 0
+    evals_multiplier: 50
+    # Time limit for tuning process, run_time terminator, will be converted to seconds
+    runtime_hours: 160 # of 168 max, must exceed at_*
+  timeout:
+    # Times in hours (!) need to be converted to seconds at correct places
+    bl_train: 12
+    bl_predict: 5
+    at_train: 156 # of 168 max
+    at_predict: 6 # leave some headroom for job
+
+# To allow special treatment of the real benchmark run
+production:
+  reg_name: "production"
+
+# Lower budget, just checking everything works, close to "production"
+trial:
+  reg_name: "trial"
+  fallback:
+    inner: true
+    outer: true
+  store:
+    tuning_instance: true
+    models: false
+  budget:
+    evals_constant: 5
+    evals_multiplier: 0
+
+debug:
+  reg_name: "debug"
+  fallback:
+    inner: false
+    outer: false
+  outer_eval:
+    resampling: "holdout"
+  tuning:
+    resampling: "holdout"
+  budget:
+    evals_constant: 10
+    evals_multiplier: 0
+  store:
+    tuning_instance: true
