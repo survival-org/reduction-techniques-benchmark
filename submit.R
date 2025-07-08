@@ -5,4 +5,4 @@ ids = tab[,
   .SD[sample(nrow(.SD), 1)],
   by = c("task_id", "learner_id")
 ]
-submitJobs(ids)
+submitJobs(ids[1:2, ])

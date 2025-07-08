@@ -62,7 +62,7 @@ source(here::here("learners.R"))
 # Set tuning measures -----------------------------------------------------
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.brier", id = "isbs", p_max = 0.8, proper = FALSE, ERV = FALSE)
+  msr("surv.brier", id = "isbs", p_max = 0.8, ERV = FALSE)
 )
 
 # Assemble learners -------------------------------------------------------
@@ -118,6 +118,29 @@ for (measure in measures) {
       xgb_cox.colsample_bytree = p_dbl(0, 1),
       xgb_cox.eta = p_dbl(0, 1),
       xgb_cox.grow_policy = p_fct(c("depthwise", "lossguide"))
+    ),
+
+    XGB_PEM = wrap_auto_tune(
+      bl(
+        "regr.xgboost",
+        id = "xgb_pem",
+        tree_method = "hist",
+        booster = "gbtree",
+        early_stopping_rounds = 50,
+        objective = "count:poisson",
+        .encode = TRUE,
+        .ppl = "survtoregr_pem"
+      ),
+      xgb_pem.nrounds = p_int(
+        upper = 5000,
+        tags = "internal_tuning",
+        aggr = function(x) as.integer(mean(unlist(x)))
+      ),
+      xgb_pem.max_depth = p_int(1, 20),
+      xgb_pem.subsample = p_dbl(0, 1),
+      xgb_pem.colsample_bytree = p_dbl(0, 1),
+      xgb_pem.eta = p_dbl(0, 1),
+      xgb_pem.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
   )
 
@@ -160,3 +183,4 @@ cli::cli_li("{length(unique(experiments$task_id))} tasks")
 
 # Table with all jobs and metadata for tasks
 tab = collect_job_table()
+

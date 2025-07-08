@@ -5,7 +5,7 @@
 #' @param ... Additional arguments passed to `lrn()`.
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .threads `(integer(1))` Number of threads to use for parallel processing, set via `mlr3::set_threads`. If `NULL`, defaults to `max(1, conf$learners$threads)`
-bl = function(key, id, ..., .encode = FALSE, .threads = NULL) {
+bl = function(key, id, ..., .encode = FALSE, .ppl = NULL, .threads = NULL) {
   cli::cli_h2("Constructing {.val {id}} from {.val {key}}")
 
   # 1. fixfactors ensures factor levels are the same during train and predict
@@ -34,10 +34,15 @@ bl = function(key, id, ..., .encode = FALSE, .threads = NULL) {
   # removeconstants: should constant features be introduced, they're dropped.
   #  - Done after treatment encoding
   # Stack preprocessing on top of learner
-  graph_learner = preproc %>>%
-    po("removeconstants") %>>%
-    lrn(key, id = id, ...) |>
-    as_learner()
+  if (is.null(.ppl)) {
+    graph_learner = preproc %>>%
+      po("removeconstants") %>>%
+      lrn(key, id = id, ...) |>
+      as_learner()
+  } else {
+    graph = ppl(.ppl, learner = lrn(key, id = id, ...))
+    graph_learner = preproc %>>% po("removeconstants") %>>% po("modelmatrix", formula = ~.) %>>% graph |> as_learner()
+  }
 
   # Add fallback so errors don't cause the experiment to halt
   if (conf$fallback$inner) {
@@ -66,6 +71,7 @@ bl = function(key, id, ..., .encode = FALSE, .threads = NULL) {
   set_threads(graph_learner, n = .threads)
 
   graph_learner
+
 }
 
 # AutoTuner -----------------------------------------------------------------------------------
@@ -138,7 +144,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   }
 
   at = auto_tuner(
-    learner = learner,
+    learner = learner$clone(deep = TRUE),
     search_space = search_space,
     resampling = resampling,
     # Measure will be set via global variable in loop
@@ -170,3 +176,4 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   at
 }
+
