@@ -162,6 +162,7 @@ for (measure in measures) {
         early_stopping_rounds = 50,
         eval_metric = "poisson-nloglik",
         objective = "count:poisson",
+        base_score = 1,
         .encode = TRUE,
         .ppl = "survtoregr_pem"
       ),
