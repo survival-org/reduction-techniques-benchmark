@@ -10,6 +10,7 @@
 #   cli::cli_alert_danger("renv library not synchronized!")
 # }
 
+# source(".Rprofile")
 library(mlr3)
 library(mlr3proba)
 library(mlr3learners)
@@ -24,7 +25,7 @@ requireNamespace("mlr3extralearners")
 # Uses batchtools to submit jobs on local machine
 # See batchtools.conf.R
 # Relevant arguments:
-# - ncpus: Number of CPU cores to use -> number of simultaneous jobs
+# - ncpus: Number of CPU cores to use -> number of simultaneous jobs (1 outer evaluation fold := 1 job)
 # - max.load: Maximum system load after which no jobs will be submitted until reduces
 #             Prevents overloading the system, e.g. for a 10 core machine set this to 8 or 9.
 if (!fs::dir_exists(fs::path_dir(conf$reg_dir))) {
@@ -72,6 +73,8 @@ for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan", id = "kaplan"),
 
+    RIDGE = bl("surv.cv_glmnet", id = "cv_glmnet", alpha = 0, .encode = TRUE),
+
     GLMN = wrap_auto_tune(
       bl("surv.cv_glmnet", id = "cv_glmnet", .encode = TRUE),
       cv_glmnet.alpha = p_dbl(0, 1)
@@ -80,7 +83,7 @@ for (measure in measures) {
     RFSRC = wrap_auto_tune(
       # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
       # is set to a non-default value and we ensure both use 150 time points for evaluation
-      bl("surv.rfsrc", id = "rfsrc", ntree = 1000, ntime = 150),
+      bl("surv.rfsrc", id = "rfsrc", ntree = 500, ntime = 150),
       rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
       rfsrc.mtry.ratio = p_dbl(0, 1),
       rfsrc.nodesize = p_int(1, 50),
@@ -88,15 +91,45 @@ for (measure in measures) {
       rfsrc.sampsize.ratio = p_dbl(0, 1)
     ),
 
-    RAN = wrap_auto_tune(
-      # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
-      bl("surv.ranger", id = "ranger", num.trees = 1000, time.interest = 150),
-      ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
-      ranger.mtry.ratio = p_dbl(0, 1),
-      ranger.min.node.size = p_int(1, 50),
-      ranger.replace = p_lgl(),
-      ranger.sample.fraction = p_dbl(0, 1)
+    RFSRC_DT = wrap_auto_tune(
+      bl(
+        "classif.rfsrc",
+        id = "rfsrc_dt",
+        ntree = 500,
+        ntime = 150,
+        .ppl = "survtoclassif_disctime"
+      ),
+      rfsrc_dt.splitrule = p_fct(c("gini", "auc", "entropy")),
+      rfsrc_dt.mtry.ratio = p_dbl(0, 1),
+      rfsrc_dt.nodesize = p_int(1, 50),
+      rfsrc_dt.samptype = p_fct(c("swr", "swor")),
+      rfsrc_dt.sampsize.ratio = p_dbl(0, 1)
     ),
+
+    # RFSRC sufficient
+    # RAN = wrap_auto_tune(
+    #   # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
+    #   bl("surv.ranger", id = "ranger", num.trees = 1000, time.interest = 150),
+    #   ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
+    #   ranger.mtry.ratio = p_dbl(0, 1),
+    #   ranger.min.node.size = p_int(1, 50),
+    #   ranger.replace = p_lgl(),
+    #   ranger.sample.fraction = p_dbl(0, 1)
+    # ),
+
+    # RAN_DT = wrap_auto_tune(
+    #   bl(
+    #     "classif.ranger",
+    #     id = "ranger",
+    #     num.trees = 1000,
+    #     .ppl = "survtoclassif_disctime"
+    #   ),
+    #   ranger.splitrule = p_fct(c("gini", "hellinger")),
+    #   ranger.mtry.ratio = p_dbl(0, 1),
+    #   ranger.min.node.size = p_int(1, 50),
+    #   ranger.replace = p_lgl(),
+    #   ranger.sample.fraction = p_dbl(0, 1)
+    # )
 
     # XGB/cox, uses breslow estimator internally via mlr3proba
     XGBCox = wrap_auto_tune(
@@ -127,6 +160,7 @@ for (measure in measures) {
         tree_method = "hist",
         booster = "gbtree",
         early_stopping_rounds = 50,
+        eval_metric = "poisson-nloglik",
         objective = "count:poisson",
         .encode = TRUE,
         .ppl = "survtoregr_pem"
@@ -141,6 +175,30 @@ for (measure in measures) {
       xgb_pem.colsample_bytree = p_dbl(0, 1),
       xgb_pem.eta = p_dbl(0, 1),
       xgb_pem.grow_policy = p_fct(c("depthwise", "lossguide"))
+    ),
+
+    XGB_DT = wrap_auto_tune(
+      bl(
+        "classif.xgboost",
+        id = "xgb_dt",
+        tree_method = "hist",
+        booster = "gbtree",
+        early_stopping_rounds = 50,
+        objective = "binary:logistic",
+        eval_metric = "logloss",
+        .encode = TRUE,
+        .ppl = "survtoclassif_disctime"
+      ),
+      xgb_dt.nrounds = p_int(
+        upper = 5000,
+        tags = "internal_tuning",
+        aggr = function(x) as.integer(mean(unlist(x)))
+      ),
+      xgb_dt.max_depth = p_int(1, 20),
+      xgb_dt.subsample = p_dbl(0, 1),
+      xgb_dt.colsample_bytree = p_dbl(0, 1),
+      xgb_dt.eta = p_dbl(0, 1),
+      xgb_dt.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
   )
 
@@ -183,4 +241,3 @@ cli::cli_li("{length(unique(experiments$task_id))} tasks")
 
 # Table with all jobs and metadata for tasks
 tab = collect_job_table()
-

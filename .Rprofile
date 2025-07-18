@@ -30,7 +30,9 @@ Sys.setenv(OPENBLAS_NUM_THREADS = 1)
 Sys.setenv(OMP_THREAD_LIMIT = 1)
 # MKL is an Intel-specific thing
 Sys.setenv(MKL_NUM_THREADS = 1)
-try(data.table::setDTthreads(1))
+if (requireNamespace("data.table", quietly = TRUE)) {
+  try(data.table::setDTthreads(1))
+}
 
 options(
   datatable.print.class = TRUE,
@@ -43,19 +45,20 @@ source("R/helpers.R")
 
 # Make renv pick up dependencies
 if (FALSE) {
-  # library("survival")
-  # library("pracma")
-  # library("glmnet")
-  # library("randomForestSRC")
-  # library("ranger")
-  # library("sandwich")
-  # library("coin")
-  # library("xgboost")
-  # library("pseudo")
+  library("survival")
+  library("randomForestSRC")
+  library("ranger")
+  library("pammtools")
+  library("xgboost")
+  library("mlr3learners")
+  library("mlr3mbo")
   library("DiceKriging") # mbo
   library("rgenoud") # mbo
-  # library("mlr3proba")
-  # library("mlr3extralearners")
-  # library("callr")
-  # require("config")
+  library("mlr3proba")
+  library("mlr3extralearners")
+  library("callr")
+  require("config")
+  library("pracma")
+  library("mlr3viz")
+  library("patchwork")
 }

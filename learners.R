@@ -41,12 +41,16 @@ bl = function(key, id, ..., .encode = FALSE, .ppl = NULL, .threads = NULL) {
       as_learner()
   } else {
     graph = ppl(.ppl, learner = lrn(key, id = id, ...))
-    graph_learner = preproc %>>% po("removeconstants") %>>% po("modelmatrix", formula = ~.) %>>% graph |> as_learner()
+    graph_learner = preproc %>>%
+      po("removeconstants") %>>%
+      po("modelmatrix", formula = ~.) %>>%
+      graph |>
+      as_learner()
   }
 
   # Add fallback so errors don't cause the experiment to halt
   if (conf$fallback$inner) {
-    suppressWarnings(graph_learner$encapsulate("evaluate", lrn("surv.kaplan")))
+    suppressWarnings(graph_learner$encapsulate("callr", lrn("surv.kaplan")))
   } else {
     cli::cli_alert_info("Not applying fallback learner for inner GraphLearner")
   }
@@ -71,7 +75,6 @@ bl = function(key, id, ..., .encode = FALSE, .ppl = NULL, .threads = NULL) {
   set_threads(graph_learner, n = .threads)
 
   graph_learner
-
 }
 
 # AutoTuner -----------------------------------------------------------------------------------
@@ -84,11 +87,12 @@ bl = function(key, id, ..., .encode = FALSE, .ppl = NULL, .threads = NULL) {
 wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   learner = as_learner(learner)
   search_space = ps(...)
-  if (is.null(search_space$trafo))
+  if (is.null(search_space$trafo)) {
     checkmate::assert_subset(
       names(search_space$params),
       names(learner$param_set$params)
     )
+  }
 
   cli::cli_alert_info(
     "Using {.val {conf$tuning$resampling}} inner resampling!"
@@ -176,4 +180,3 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   at
 }
-
