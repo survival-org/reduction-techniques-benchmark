@@ -2,6 +2,8 @@ library(tidyverse)
 library(mvtnorm)
 library(Matrix)
 library(pammtools)
+library(flexsurv)
+library(simsurv)
 
 
 # function to simulate correlated variables
@@ -38,7 +40,7 @@ df <- tibble::tibble(
     x3 = runif(n, -3, 3)
 )
 
-
+df = cbind(df, simulate_correlated_variables(n_variables = 20, n_samples = n))
 
 # baseline hazard
 f0 <- function(t, x0) { x0 * dgamma(t, 8, 2) * 6 }
@@ -53,18 +55,56 @@ surv_df <- pammtools::sim_pexp(
     formula = ~ -3.5 + f0(t, x0)  + fx1(x1, t) + fx2(x2, t) + fx3(x3, t),
     data    = df,
     cut     = time_grid)
+surv_df$cens = runif(nrow(surv_df), 0, 20)
+surv_df <- surv_df %>%
+  mutate(
+    status = if_else(time > cens, 0, 1), 
+    time = if_else(status == 0, cens, time)) %>%
+  select(-cens)
 
 
-# set number of observations/subjects
+
+saveRDS(surv_df, "datasets/synthetic-tve.Rds")
+
+
+
+
+# genetic data with high-dim interactions
+
+data("eHGDP", package = "adegenet")
+synth_df_genetic <- na.omit(as.data.frame(eHGDP@tab)[, 1:100])
+# synth_df_genetic = synth_df_genetic[, colSums(synth_df_genetic) > 50]
+synth_df_genetic <- cbind(synth_df_genetic, hdi = Reduce("*", synth_df_genetic[, c("loc-6.175", "loc-8.183", "loc-8.187")]))
+colnames(synth_df_genetic) = gsub("-", "_", colnames(synth_df_genetic))
+
+
+# specify model with two main effects and independent high-dim interaction
+betas = rep(0, ncol(synth_df_genetic))
+names(betas) = colnames(synth_df_genetic)
+betas[c("loc_6.159", "loc_2.288")] = c(-.2, .2)
+betas["hdi"] = -.4
+synth_surv_genetic = simsurv(dist = "weibull", lambdas = .1, gammas = 1.5, maxt=5, betas = betas, x = synth_df_genetic)
+# summary(synth_surv_genetic$eventtime)
+# table(synth_surv_genetic$status)
+# synth_df_genetic = cbind(synth_df_genetic, synth_surv_genetic[ c("status", "eventtime")])
+# m = survival::survreg(Surv(eventtime, status) ~ ., data = synth_df_genetic, dist = "weibull")
+# summary(m)
+saveRDS(synth_df_genetic, "datasets/synthetic-hdi.Rds")
+
+
+
+
+# break point data 
+
 n <- 2000
 # create data set with variables which will affect the hazard rate.
-df <- cbind.data.frame(x1 = runif (n, -3, 3), x2 = runif (n, 0, 6)) %>%
- as_tibble()
+df <- simulate_correlated_variables(n_variables = 20, n_samples = n)
 # the formula which specifies how covariates affet the hazard rate
 f0 <- function(t) {
- (t < 4)*dgamma(t, 8, 2) *6 + (t>4)*0
+ dgamma(t, 8, 2) *6
 }
-form <- ~ -3.5 + f0(t)
+form <- ~ -3.5 + f0(t) + (v2 > 0)*(v1<0)*(f0(t)*(t<4) + (t>4)*0) + .2 *v3 -.4 * v4
 set.seed(24032018)
 sim_df <- sim_pexp(form, df, 1:10)
 
+saveRDS(sim_df, "datasets/synthetic-breakpoint.Rds")
