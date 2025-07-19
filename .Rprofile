@@ -1,5 +1,6 @@
 # Circumvent srcref issue https://github.com/rstudio/renv/issues/1713
 options("install.opts" = "--without-keep.source")
+options("renv.config.pak.enabled" = TRUE)
 
 if (file.exists("renv/activate.R")) {
   source("renv/activate.R")
