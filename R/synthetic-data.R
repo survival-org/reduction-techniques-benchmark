@@ -1,4 +1,4 @@
-library(tidyverse)
+library(dplyr)
 library(mvtnorm)
 library(Matrix)
 library(pammtools)
