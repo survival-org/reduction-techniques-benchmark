@@ -3,6 +3,11 @@ library(batchtools)
 library(dplyr)
 
 reg = loadRegistry(conf$reg_dir, writeable = FALSE)
+tab = collect_job_table(
+  optional_columns = c("submitted", "done", "time.running", "memory")
+)
+
+done_count = ijoin(tab, findDone())[, .N, by = .(learner_id, task_id)]
 
 bmr_harrell_c = mlr3batchmark::reduceResultsBatchmark(ijoin(
   findDone(),

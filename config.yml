@@ -47,15 +47,15 @@ trial:
     inner: true
     outer: true
   budget:
-    evals_constant: 10
+    evals_constant: 5
     evals_multiplier: 0
     runtime_hours: 1 # must be less than at_train, see also https://mlr-org.com/gallery/technical/2023-12-21-time-constraints/
   timeout:
     # Times in hours (!) need to be converted to seconds at correct places
-    bl_train: 0.5
-    bl_predict: 0.1
-    at_train: 1.5
-    at_predict: 0.5
+    bl_train: 1
+    bl_predict: 0.5
+    at_train: 2
+    at_predict: 0.75
 
 debug:
   reg_name: "debug"
