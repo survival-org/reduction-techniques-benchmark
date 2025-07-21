@@ -182,18 +182,17 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
   ensure_directory(path)
 
   lrntab <- mlr3misc::rowwise_table(
-    ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
-    "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
-    "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
-    "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "RAN"     , "ranger"     , "surv.ranger"       , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "ORSF"    , "aorsf"      , "surv.aorsf"        , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "MBSTCox" , "mboost_cox" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "MBSTAFT" , "mboost_aft" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "CoxB"    , "coxboost"   , "surv.cv_coxboost"  , 0 ,    TRUE  , TRUE  ,        FALSE, FALSE,
-    "XGBCox"  , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE
+    ~id,       ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
+    "KM"       , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RIDGE"    , "cv_glmnet"  , "surv.cv_glmnet"    , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "GLMN"     , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
+
+    "RFSRC"    , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RFSRC_DT" , "rfsrc_dt"   , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+
+    "XGBCox"   , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "XGB_PEM"  , "xgb_pem"    , "regr.xgboost"      , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "XGB_DT"   , "xgb_dt"     , "classif.xgboost"   , 5 ,    TRUE  , FALSE ,        FALSE, FALSE
   )
 
   lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
