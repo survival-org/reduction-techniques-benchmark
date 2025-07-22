@@ -1,0 +1,9 @@
+id,base_id,base_lrn,params,encode,internal_cv,grid,scale,has_threads
+KM,kaplan,surv.kaplan,0,FALSE,FALSE,FALSE,FALSE,FALSE
+RIDGE,cv_glmnet,surv.cv_glmnet,0,FALSE,FALSE,FALSE,FALSE,FALSE
+GLMN,cv_glmnet,surv.cv_glmnet,1,FALSE,TRUE,FALSE,FALSE,FALSE
+RFSRC,rfsrc,surv.rfsrc,5,FALSE,FALSE,FALSE,FALSE,TRUE
+RFSRC_DT,rfsrc_dt,surv.rfsrc,5,FALSE,FALSE,FALSE,FALSE,TRUE
+XGBCox,xgb_cox,surv.xgboost.cox,5,TRUE,FALSE,FALSE,FALSE,TRUE
+XGB_PEM,xgb_pem,regr.xgboost,5,TRUE,FALSE,FALSE,FALSE,TRUE
+XGB_DT,xgb_dt,classif.xgboost,5,TRUE,FALSE,FALSE,FALSE,TRUE
