@@ -3,6 +3,8 @@ registries/*
 Rplots.pdf
 scratch.R
 debug-*.R
+
+.envrc
 # Created by https://www.toptal.com/developers/gitignore/api/R
 # Edit at https://www.toptal.com/developers/gitignore?templates=R
 
