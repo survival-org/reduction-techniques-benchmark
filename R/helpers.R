@@ -159,10 +159,10 @@ load_task_data = function() {
 assign_repeats = function(num_events) {
   data.table::fcase(
     num_events < 500,
-    10,
-    num_events >= 500 & num_events < 2500,
-    5,
-    num_events > 2500,
+    3,
+    num_events >= 500 & num_events < 1000,
+    2,
+    num_events > 1000,
     1
   )
 }
