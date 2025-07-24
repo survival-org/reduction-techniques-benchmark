@@ -3,6 +3,13 @@ registries/*
 Rplots.pdf
 scratch.R
 debug-*.R
+Makefile
+tables.qmd
+tables.pdf
+*_files
+*_runtime.R
+status.qmd
+status.html
 
 .envrc
 # Created by https://www.toptal.com/developers/gitignore/api/R
