@@ -159,7 +159,7 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
   save_plot(
     p,
     name = glue::glue("scores_per_task_{eval_meas_idx}"),
-    width = 7,
+    width = 9,
     height = 12
   )
 }
