@@ -5,7 +5,7 @@ This benchmark uses [mlr3](https://mlr3.mlr-org.com/) for task and learner setup
 
 ## File Structure
 
-- `config.yaml`: Defines general experiment settings for different scenarios, i.e. production mode, trial mode or debug mode
+- `config.yml`: Defines general experiment settings for different scenarios, i.e. production mode, trial mode or debug mode
   - Loaded automatically via `.Rprofile` using the [`config`](https://rstudio.github.io/config/) package and stored in `conf` list.
   - Config modes (set in `.Renviron`):
     - Debug mode does not use fallbacks and encapsulation, so this is where error emssages are easiest to find
@@ -26,7 +26,9 @@ This benchmark uses [mlr3](https://mlr3.mlr-org.com/) for task and learner setup
 
 ## Setup
 
-Currently there is no [renv]() setup yet to control dependencies, so for initialization you should at least install the following:
+[renv](https://docs.posit.co/ide/user/ide/guide/environments/r/renv.html) controls dependencies, and when you start an R session in the project root it will bootstrap itself and prompt you to run `renv::restore()` to install all required packages. This may take a moment.
+
+If ytou encounter issues with renv you cannot resolve, comment out the line `source("renv/activate.R")` in `.Rprofile` and restart the R session. You will need to install packages manually, and in particular we rely on `mlr3tuning@1.3.0` instead of the latest CRAN release, so please ensure you install the correct version, for example using `pak` like this:
 
 ```r
 if (!requireNamespace("pak", quietly = TRUE)) {
@@ -40,26 +42,21 @@ pak::pak(c(
   "cli",
   "fs",
   # mlr3 ecosystem
-  "mlr3verse",
-  "mlr3mbo",
+  "mlr3",
+  "mlr3learners",
+  "mlr3tuning@1.3.0",
+  "mlr-org/mlr3mbo",
   "mlr3extralearners",
-  "mlr3proba",
+  "mlr-org/mlr3proba",
   # learners
   "glmnet",
   "xgboost",
-  "ranger",
   "randomForestSRC"
 ))
 ```
-
-
-
-1. Adjust preprocessing pipelines as needed in `learners.R`
-2. Ensure selected tasks are set up as needed in `tasks.R`
-3. Adapt `benchmark.R` for learners and tuning spaces
-
 ## Running the experiment
 
-1. Source `batchmark.R`, creating a batchtools registry.
-2. Submit josb via `submitJobs()`, depending on available hardware etc.
-3. Collect and score results in `results.R`
+1. Source `benchmark.R`, creating a batchtools registry.
+2. Submit jobs via `submitJobs()`, depending on available hardware etc.
+3. Collect and score results in `results-processing.R`
+4. Create figures and tables with `results-processing.R`
