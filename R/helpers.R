@@ -325,3 +325,81 @@ ensure_directory = function(x) {
 
   fs::dir_exists(x)
 }
+
+#' Aggregate extracted inner tuning archives from bmr to list of flat data.tables for easier viewing/storage
+#' One list item -> One learner (all tasks in one)
+archive_to_list = function(archive) {
+  if (nrow(archive)) {
+    return(data.table())
+  }
+  # unnesting the list of internal tuned vals is cumbersome
+  archive[,
+    internal_tuned_values := lapply(archive$internal_tuned_values, \(x) {
+      if (length(x) == 0) list(dummy = 0) else x
+    })
+  ]
+  unnested <- rbindlist(archive$internal_tuned_values, fill = TRUE)
+  archive <- cbind(
+    archive[, -"internal_tuned_values"],
+    unnested[, -"dummy"]
+  )
+
+  # drop all columns that are all NA
+  archive_list = lapply(unique(archive$learner_id), \(lrn_idx) {
+    tmp = archive[learner_id == lrn_idx]
+    tmp[, .SD, .SDcols = colSums(!is.na(tmp)) > 0]
+  })
+  names(archive_list) = unique(archive$learner_id)
+
+  archive_list
+}
+
+#' Utility to save result object to .rds file
+#' @param obj Some R object, preferably a data.frame-like one.
+#' @param name Optional string to name the file, will be `<name>.rds` or otherwise the name of provided `obj`.
+#'
+#' Results are saved to ./results/<config-mode>/<name>.rds
+save_obj = function(obj, name = NULL, prefix = "") {
+  ensure_directory(conf$result_path)
+  xname = deparse(substitute(obj))
+  name = name %||% xname
+  if (prefix != "") {
+    name = paste0(prefix, "_", name)
+  }
+
+  file_out = fs::path(result_dir, name, ext = "rds")
+  cli::cli_progress_step(
+    "Saving {.val {xname}} to {.file {fs::path_rel(file_out)}}"
+  )
+  saveRDS(object = obj, file = file_out)
+}
+
+#' Utility to save ggplot object as png
+#' @param plot A ggplot2 plot.
+#' @param name Name of output file. `.tex` will be appended automatically.
+#' @param width,heigh,... Passed to `ggplot2::ggsave()`
+save_plot = function(plot, name, width = 9, height = 6, ...) {
+  result_dir = fs::path(conf$result_path, "figures")
+  ensure_directory(result_dir)
+  file_out = fs::path(result_dir, name, ext = "png")
+  ggplot2::ggsave(
+    filename = file_out,
+    plot = plot,
+    width = width,
+    height = height,
+    bg = "white", # transparency can become an issue
+    ...
+  )
+}
+
+#' Utility to save LaTeX tables as standalone .tex files
+#' Used in conjunction with kableExtra
+#' @param tbl A LaTeX-formatted table as produced by e.g. knitr::kable() and kableExtra
+#' @param name Name of output file. `.tex` will be appended automatically.
+save_table = function(tbl, name) {
+  result_dir = fs::path(conf$result_path, "tables")
+
+  ensure_directory(result_dir)
+  file_out = fs::path(result_dir, name, ext = "tex")
+  writeLines(tbl, con = file_out)
+}
