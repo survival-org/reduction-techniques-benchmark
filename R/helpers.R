@@ -329,27 +329,25 @@ ensure_directory = function(x) {
 #' Aggregate extracted inner tuning archives from bmr to list of flat data.tables for easier viewing/storage
 #' One list item -> One learner (all tasks in one)
 archive_to_list = function(archive) {
-  if (nrow(archive)) {
-    return(data.table())
-  }
+  archive_tmp = copy(archive)
   # unnesting the list of internal tuned vals is cumbersome
-  archive[,
-    internal_tuned_values := lapply(archive$internal_tuned_values, \(x) {
+  archive_tmp[,
+    internal_tuned_values := lapply(archive_tmp$internal_tuned_values, \(x) {
       if (length(x) == 0) list(dummy = 0) else x
     })
   ]
-  unnested <- rbindlist(archive$internal_tuned_values, fill = TRUE)
-  archive <- cbind(
-    archive[, -"internal_tuned_values"],
+  unnested <- rbindlist(archive_tmp$internal_tuned_values, fill = TRUE)
+  archive_tmp <- cbind(
+    archive_tmp[, -"internal_tuned_values"],
     unnested[, -"dummy"]
   )
 
   # drop all columns that are all NA
-  archive_list = lapply(unique(archive$learner_id), \(lrn_idx) {
-    tmp = archive[learner_id == lrn_idx]
+  archive_list = lapply(unique(archive_tmp$learner_id), \(lrn_idx) {
+    tmp = archive_tmp[learner_id == lrn_idx]
     tmp[, .SD, .SDcols = colSums(!is.na(tmp)) > 0]
   })
-  names(archive_list) = unique(archive$learner_id)
+  names(archive_list) = unique(archive_tmp$learner_id)
 
   archive_list
 }
@@ -367,7 +365,7 @@ save_obj = function(obj, name = NULL, prefix = "") {
     name = paste0(prefix, "_", name)
   }
 
-  file_out = fs::path(result_dir, name, ext = "rds")
+  file_out = fs::path(conf$result_path, name, ext = "rds")
   cli::cli_progress_step(
     "Saving {.val {xname}} to {.file {fs::path_rel(file_out)}}"
   )
