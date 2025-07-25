@@ -2,9 +2,8 @@ library(mlr3proba)
 library(batchtools)
 library(data.table)
 
-
 # Process registry -------------------------------------------------------
-reg = loadRegistry(conf$reg_dir, writeable = FALSE)
+reg = loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
 tab = collect_job_table(
   optional_columns = c("submitted", "done", "time.running", "memory")
 )

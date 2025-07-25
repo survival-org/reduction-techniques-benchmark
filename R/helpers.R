@@ -376,18 +376,33 @@ save_obj = function(obj, name = NULL, prefix = "") {
 #' @param plot A ggplot2 plot.
 #' @param name Name of output file. `.tex` will be appended automatically.
 #' @param width,heigh,... Passed to `ggplot2::ggsave()`
-save_plot = function(plot, name, width = 9, height = 6, ...) {
+#' @param format File extensin for corresponding output format, e.g. "png", "svg", "pdf"
+save_plot = function(
+  plot,
+  name,
+  width = 9,
+  height = 6,
+  ...,
+  format = c("png", "pdf")
+) {
   result_dir = fs::path(conf$result_path, "figures")
   ensure_directory(result_dir)
-  file_out = fs::path(result_dir, name, ext = "png")
-  ggplot2::ggsave(
-    filename = file_out,
-    plot = plot,
-    width = width,
-    height = height,
-    bg = "white", # transparency can become an issue
-    ...
-  )
+
+  purrr::walk(format, \(x) {
+    file_out = fs::path(result_dir, name, ext = x)
+    cli::cli_progress_step(
+      "Saving {.val {name}} as {.val {x}} to {.file {fs::path_rel(file_out)}}"
+    )
+    ggplot2::ggsave(
+      filename = file_out,
+      plot = plot,
+      width = width,
+      height = height,
+      dpi = 600,
+      bg = "white", # transparency can become an issue
+      ...
+    )
+  })
 }
 
 #' Utility to save LaTeX tables as standalone .tex files

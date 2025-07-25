@@ -12,6 +12,14 @@ scores = rbind(
   scores_harell_c[, tuning_measure := "harrell_c"]
 )
 
+scores_long = scores |>
+  tidyr::pivot_longer(
+    cols = c("harrell_c", "isbs"),
+    names_to = "eval_measure",
+    values_to = "score"
+  ) |>
+  filter(tuning_measure == eval_measure) |>
+  select(-tuning_measure, -uhash)
 
 task_ids = c(
   "synthetic-breakpoint",
@@ -37,6 +45,7 @@ learner_ids = c(
   "XGB_DT"
 )
 
+# https://coolors.co/686868-abede2-47d7bf-fe7171-a20101-86a4d5-5982c5-2a4879
 learner_colors = c(
   "KM" = "#686868",
   "RIDGE" = "#89E6D7",
@@ -53,15 +62,6 @@ measures_labels = c(
   "harrell_c" = "Harrell's C",
   "isbs" = "ISBS"
 )
-
-scores_long = scores |>
-  tidyr::pivot_longer(
-    cols = c("harrell_c", "isbs"),
-    names_to = "eval_measure",
-    values_to = "score"
-  ) |>
-  filter(tuning_measure == eval_measure) |>
-  select(-tuning_measure, -uhash)
 
 # Plots ------------------------------------------------------------------
 
@@ -166,6 +166,36 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
 
 # Tables -----------------------------------------------------------------
 
+# Tasks
+
+tasktab = load_tasktab()
+tasktab |>
+  arrange(task_id) |>
+  select(task_id, n, p, events, censprop) |>
+  mutate(
+    censprop = round(100 * censprop, 2),
+    repeats = assign_repeats(events)
+  ) |>
+  kableExtra::kbl(
+    col.names = c("Task", "N", "p", "Events", "Cens. %", "Repeats"),
+    caption = "Tasks used in benchmark comparison \\label{tab:bm-tasks}",
+    booktabs = TRUE,
+    format = "latex",
+    linesep = ""
+  ) |>
+  save_table(name = "tasks")
+
+lrntab = load_lrntab()
+lrntab |>
+  select(id, package, base_lrn, params) |>
+  kableExtra::kbl(
+    col.names = c("ID", "Package", "mlr3 ID", "# Parameters"),
+    caption = "Learnes and associated mlr3 IDs and source R packages used in benchmark comparison \\label{tab:bm-learners}",
+    booktabs = TRUE,
+    format = "latex"
+  ) |>
+  save_table(name = "learners")
+
 # Scores aggregated by learner, task
 tbl = scores_long |>
   group_by(learner_id, task_id, eval_measure) |>
@@ -247,3 +277,57 @@ tbl_aggr |>
   ) |>
   kableExtra::kable_styling() |>
   save_table(name = "aggr")
+
+# Error counting in archives -----------------------------------------------
+archives_harrell_c = readRDS(fs::path(
+  conf$result_path,
+  "harrell_c_archives.rds"
+))
+
+archives_isbs = readRDS(fs::path(
+  conf$result_path,
+  "isbs_archives.rds"
+))
+
+archives_harrell_c$XGBCox |>
+  select(
+    experiment,
+    iteration,
+    task_id,
+    learner_id,
+    runtime_learners,
+    warnings,
+    errors,
+    batch_nr
+  ) |>
+  mutate(
+    errors_rel = errors / 3 # 3 tuning folds
+  ) |>
+  group_by(task_id) |>
+  summarize(
+    iters_with_errors = sum(errors > 0),
+    iters_total = n(),
+    error_rate = iters_with_errors / iters_total
+  )
+
+
+archives_isbs$XGBCox |>
+  select(
+    experiment,
+    iteration,
+    task_id,
+    learner_id,
+    runtime_learners,
+    warnings,
+    errors,
+    batch_nr
+  ) |>
+  mutate(
+    errors_rel = errors / 3 # 3 tuning folds
+  ) |>
+  group_by(task_id) |>
+  summarize(
+    iters_with_errors = sum(errors > 0),
+    iters_total = n(),
+    error_rate = iters_with_errors / iters_total
+  )
