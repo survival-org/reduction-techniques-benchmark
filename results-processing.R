@@ -30,7 +30,8 @@ save_obj(tab_runtime, "runtime")
 # fmt: skip
 eval_measures = list(
  msr("surv.cindex",      id = "harrell_c",                          label = "Harrell's C"),
- msr("surv.brier",       id = "isbs",     p_max = 0.8, ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)")
+ msr("surv.brier",       id = "isbs",     p_max = 0.8, ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+ msr("surv.brier",       id = "ipa",      p_max = 0.8, ERV = TRUE,  label = "Index of Prediction Accuracy (IPA)")
 )
 
 for (tune_meas_idx in c("harrell_c", "isbs")) {
