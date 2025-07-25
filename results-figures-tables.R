@@ -14,12 +14,21 @@ scores = rbind(
 
 scores_long = scores |>
   tidyr::pivot_longer(
-    cols = c("harrell_c", "isbs"),
+    cols = c("harrell_c", "isbs", "ipa"),
     names_to = "eval_measure",
     values_to = "score"
   ) |>
-  filter(tuning_measure == eval_measure) |>
+  filter(
+    # Only keep matching measures
+    tuning_measure == eval_measure |
+      (tuning_measure == "isbs" & eval_measure == "ipa"),
+    # Don't need constant KM 0 for IPA
+    !(learner_id == "KM" & eval_measure == "ipa")
+  ) |>
   select(-tuning_measure, -uhash)
+
+# scores_long |>
+#   count(tuning_measure, eval_measure)
 
 task_ids = c(
   "synthetic-breakpoint",
@@ -57,23 +66,23 @@ learner_colors = c(
   "XGB_DT" = "#2A4879"
 )
 
-
 measures_labels = c(
   "harrell_c" = "Harrell's C",
-  "isbs" = "ISBS"
+  "isbs" = "ISBS",
+  "ipa" = "IPA"
 )
 
 # Plots ------------------------------------------------------------------
 
-# Scores boxplots for learners, agrgegated over tasks, separately for tuning/eval measures
-for (eval_meas_idx in c("harrell_c", "isbs")) {
+# Scores boxplots for learners, agrgegated over tasks, separately for eval measures
+for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   p = scores_long |>
+    filter(
+      .data[["eval_measure"]] == eval_meas_idx
+    ) |>
     mutate(
       task_id = factor(task_id, levels = task_ids),
       learner_id = factor(learner_id, levels = rev(learner_ids))
-    ) |>
-    filter(
-      .data[["eval_measure"]] == eval_meas_idx
     ) |>
     mutate(score = 100 * score) |>
     ggplot(aes(
@@ -89,9 +98,9 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
     ) +
     labs(
       title = glue::glue(
-        "Aggregated {measures_labels[eval_meas_idx]}"
+        "Aggregated scores for learners tuned & evaluated with {measures_labels[eval_meas_idx]}"
       ),
-      x = glue::glue("{measures_labels[[eval_meas_idx]]} (scaled by 100)"),
+      x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
       caption = ifelse(
         eval_meas_idx == "harrell_c",
@@ -115,14 +124,14 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
 }
 
 # Separately by task
-for (eval_meas_idx in c("harrell_c", "isbs")) {
+for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   p = scores_long |>
+    filter(
+      .data[["eval_measure"]] == eval_meas_idx
+    ) |>
     mutate(
       task_id = factor(task_id, levels = task_ids),
       learner_id = factor(learner_id, levels = rev(learner_ids))
-    ) |>
-    filter(
-      .data[["eval_measure"]] == eval_meas_idx
     ) |>
     mutate(score = 100 * score) |>
     ggplot(aes(
@@ -131,7 +140,7 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
       fill = learner_id,
       color = after_scale(colorspace::darken(fill, amount = 0.2))
     )) +
-    facet_wrap(vars(task_id), ncol = 2) +
+    facet_wrap(vars(task_id), ncol = 2, scales = "free") +
     geom_boxplot(alpha = 2 / 3, show.legend = FALSE) +
     scale_color_manual(
       values = learner_colors,
@@ -139,9 +148,9 @@ for (eval_meas_idx in c("harrell_c", "isbs")) {
     ) +
     labs(
       title = glue::glue(
-        "Learners tuned & evaluated with {measures_labels[eval_meas_idx]}, by task"
+        "Scores for learners tuned & evaluated with {measures_labels[eval_meas_idx]}"
       ),
-      x = glue::glue("{measures_labels[[eval_meas_idx]]} (scaled by 100)"),
+      x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
       caption = ifelse(
         eval_meas_idx == "harrell_c",
@@ -197,7 +206,7 @@ lrntab |>
   save_table(name = "learners")
 
 # Scores aggregated by learner, task
-tbl = scores_long |>
+tbl_scores = scores_long |>
   group_by(learner_id, task_id, eval_measure) |>
   summarise(
     score_mean = mean(score),
@@ -214,7 +223,7 @@ tbl = scores_long |>
     names_from = "eval_measure",
     values_from = "score_fmt"
   ) |>
-  select(task_id, learner_id, isbs, harrell_c) |>
+  select(task_id, learner_id, harrell_c, isbs, ipa) |>
   mutate(
     task_id = factor(task_id, levels = task_ids),
     learner_id = factor(learner_id, levels = learner_ids)
@@ -222,20 +231,21 @@ tbl = scores_long |>
   arrange(task_id, learner_id) |>
   ungroup()
 
-tbl |>
+tbl_scores |>
   select(-task_id) |>
   kableExtra::kbl(
-    caption = "Mean (SD) of evaluation scores for each learner and task. Scores scaled by 100 for readability.",
+    caption = "Mean (SD) of evaluation scores for each learner and task. Scores scaled by 100 for readability.\\label{tab:bm-scores}",
     col.names = c(
       "Learner",
+      "Harrell's C",
       "ISBS",
-      "Harrell's C"
+      "IPA"
     ),
     booktabs = TRUE,
     format = "latex"
   ) |>
   kableExtra::kable_styling(latex_options = c("striped")) |>
-  kableExtra::pack_rows(index = table(tbl$task_id)) |>
+  kableExtra::pack_rows(index = table(tbl_scores$task_id)) |>
   save_table(name = "scores")
 
 # Aggregated by learner
@@ -257,7 +267,7 @@ tbl_aggr = scores_long |>
     names_from = "eval_measure",
     values_from = "score_fmt"
   ) |>
-  select(learner_id, isbs, harrell_c) |>
+  select(learner_id, harrell_c, isbs, ipa) |>
   mutate(
     learner_id = factor(learner_id, levels = learner_ids)
   ) |>
@@ -266,13 +276,15 @@ tbl_aggr = scores_long |>
 
 tbl_aggr |>
   kableExtra::kbl(
-    caption = "Mean (SD) of evaluation scores aggregated by learner. Scores scaled by 100 for readability.",
+    caption = "Mean (SD) of evaluation scores aggregated by learner. Scores scaled by 100 for readability.\\label{tab:bm-aggr}",
     col.names = c(
       "Learner",
+      "Harrell's C",
       "ISBS",
-      "Harrell's C"
+      "IPA"
     ),
     booktabs = TRUE,
+    linesep = "",
     format = "latex"
   ) |>
   kableExtra::kable_styling() |>
@@ -289,45 +301,47 @@ archives_isbs = readRDS(fs::path(
   "isbs_archives.rds"
 ))
 
-archives_harrell_c$XGBCox |>
-  select(
-    experiment,
-    iteration,
-    task_id,
-    learner_id,
-    runtime_learners,
-    warnings,
-    errors,
-    batch_nr
-  ) |>
+list(archives_harrell_c, archives_isbs) |>
+  lapply(\(archive_list) {
+    lapply(archive_list, \(archive) {
+      archive |>
+        group_by(learner_id, task_id) |>
+        summarize(
+          iters_with_errors = sum(errors > 0),
+          iters_total = n(),
+          error_rate = iters_with_errors / iters_total,
+          .groups = "drop"
+        ) |>
+        mutate(
+          tune_measure = ifelse(
+            "harrell_c" %in% names(archive),
+            "harell_c",
+            "isbs"
+          )
+        ) |>
+        filter(error_rate > 0)
+    }) |>
+      rbindlist()
+  }) |>
+  rbindlist() |>
   mutate(
-    errors_rel = errors / 3 # 3 tuning folds
+    err_fmt = glue::glue(
+      "{iters_with_errors} / {iters_total} ({round(100 * error_rate, 1)}%)"
+    )
   ) |>
-  group_by(task_id) |>
-  summarize(
-    iters_with_errors = sum(errors > 0),
-    iters_total = n(),
-    error_rate = iters_with_errors / iters_total
-  )
-
-
-archives_isbs$XGBCox |>
-  select(
-    experiment,
-    iteration,
-    task_id,
-    learner_id,
-    runtime_learners,
-    warnings,
-    errors,
-    batch_nr
+  select(learner_id, task_id, tune_measure, err_fmt) |>
+  arrange(learner_id, task_id, tune_measure) |>
+  kableExtra::kbl(
+    caption = "Errors encountered during tuning procedure. Showing total number of evaluations with at least one error and total number of tuning evaluations and error rate.\\label{tab:bm-errors}",
+    col.names = c(
+      "Learner",
+      "Task",
+      "Tuning Measure",
+      "Error Rate"
+    ),
+    booktabs = TRUE,
+    linesep = "",
+    format = "latex"
   ) |>
-  mutate(
-    errors_rel = errors / 3 # 3 tuning folds
-  ) |>
-  group_by(task_id) |>
-  summarize(
-    iters_with_errors = sum(errors > 0),
-    iters_total = n(),
-    error_rate = iters_with_errors / iters_total
-  )
+  kableExtra::kable_styling() |>
+  save_table("errors")

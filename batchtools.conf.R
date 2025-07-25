@@ -1,7 +1,7 @@
 # SSH clusterfunctions with localhost worker are useful for more robust computation on a single/local machine
 # max.load allows to control how much CPU is "left" for other stuff, e.g. "don't submit jobs if load is over 60"
 cluster.functions <- makeClusterFunctionsSSH(
-   list(Worker$new("localhost", ncpus = 32, max.load = 60)),
+   list(Worker$new("localhost", ncpus = 20, max.load = 44)),
    fs.latency = 0
 )
 
