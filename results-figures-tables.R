@@ -21,9 +21,7 @@ scores_long = scores |>
   filter(
     # Only keep matching measures
     tuning_measure == eval_measure |
-      (tuning_measure == "isbs" & eval_measure == "ipa"),
-    # Don't need constant KM 0 for IPA
-    !(learner_id == "KM" & eval_measure == "ipa")
+      (tuning_measure == "isbs" & eval_measure == "ipa")
   ) |>
   select(-tuning_measure, -uhash)
 
@@ -72,13 +70,29 @@ measures_labels = c(
   "ipa" = "IPA"
 )
 
+captions = c(
+  "harrell_c" = "Higher is better",
+  "isbs" = "Lower is better",
+  "ipa" = "Lower is better"
+)
+
+subtitles = c(
+  c(
+    "harrell_c" = "Baseline (KM) socre: 50",
+    "isbs" = NA,
+    "ipa" = "Baseline (KM) score: 0"
+  )
+)
+
 # Plots ------------------------------------------------------------------
 
 # Scores boxplots for learners, agrgegated over tasks, separately for eval measures
 for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   p = scores_long |>
     filter(
-      .data[["eval_measure"]] == eval_meas_idx
+      .data[["eval_measure"]] == eval_meas_idx,
+      # Don't need constant KM 0 for IPA
+      !(learner_id == "KM" & eval_measure %in% c("harrell_c", "ipa"))
     ) |>
     mutate(
       task_id = factor(task_id, levels = task_ids),
@@ -100,13 +114,10 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
       title = glue::glue(
         "Aggregated scores for learners tuned & evaluated with {measures_labels[eval_meas_idx]}"
       ),
+      subtitle = subtitles[[eval_meas_idx]],
       x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
-      caption = ifelse(
-        eval_meas_idx == "isbs",
-        "Lower is better",
-        "Higher is better"
-      )
+      caption = captions[[eval_meas_idx]]
     ) +
     theme_minimal(base_size = 14) +
     theme(plot.title.position = "plot")
@@ -127,7 +138,9 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
 for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   p = scores_long |>
     filter(
-      .data[["eval_measure"]] == eval_meas_idx
+      .data[["eval_measure"]] == eval_meas_idx,
+      # Don't need constant KM 0 for IPA
+      !(learner_id == "KM" & eval_measure %in% c("harrell_c", "ipa"))
     ) |>
     mutate(
       task_id = factor(task_id, levels = task_ids),
@@ -150,13 +163,10 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
       title = glue::glue(
         "Scores for learners tuned & evaluated with {measures_labels[eval_meas_idx]}"
       ),
+      subtitle = subtitles[[eval_meas_idx]],
       x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
-      caption = ifelse(
-        eval_meas_idx == "isbs",
-        "Lower is better",
-        "Higher is better"
-      )
+      caption = captions[[eval_meas_idx]]
     ) +
     theme_minimal(base_size = 14) +
     theme(plot.title.position = "plot")
