@@ -96,7 +96,6 @@ for (measure in measures) {
         "classif.rfsrc",
         id = "rfsrc_dt",
         ntree = 500,
-        ntime = 150,
         .ppl = "survtoclassif_disctime"
       ),
       rfsrc_dt.splitrule = p_fct(c("gini", "auc", "entropy")),
