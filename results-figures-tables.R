@@ -103,9 +103,9 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
       x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
       caption = ifelse(
-        eval_meas_idx == "harrell_c",
-        "Higher is better",
-        "Lower is better"
+        eval_meas_idx == "isbs",
+        "Lower is better",
+        "Higher is better"
       )
     ) +
     theme_minimal(base_size = 14) +
@@ -153,9 +153,9 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
       x = glue::glue("{measures_labels[[eval_meas_idx]]} (%)"),
       y = NULL,
       caption = ifelse(
-        eval_meas_idx == "harrell_c",
-        "Higher is better",
-        "Lower is better"
+        eval_meas_idx == "isbs",
+        "Lower is better",
+        "Higher is better"
       )
     ) +
     theme_minimal(base_size = 14) +
