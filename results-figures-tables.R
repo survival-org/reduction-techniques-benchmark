@@ -1,16 +1,7 @@
 library(ggplot2)
 library(dplyr, warn.conflicts = FALSE)
 
-
-# fmt: skip
-scores_isbs = readRDS(fs::path(here::here("results", conf$reg_name), "isbs_scores.rds"))
-# fmt: skip
-scores_harell_c = readRDS(fs::path(here::here("results", conf$reg_name), "harrell_c_scores.rds"))
-
-scores = rbind(
-  scores_isbs[, tuning_measure := "isbs"],
-  scores_harell_c[, tuning_measure := "harrell_c"]
-)
+scores = readRDS(fs::path(here::here("results", conf$reg_name), "scores.rds"))
 
 scores_long = scores |>
   tidyr::pivot_longer(
