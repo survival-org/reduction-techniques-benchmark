@@ -78,8 +78,8 @@ captions = c(
 
 subtitles = c(
   c(
-    "harrell_c" = "Baseline (KM) socre: 50",
-    "isbs" = NA,
+    "harrell_c" = "Baseline (KM) score: 50",
+    "isbs" = "",
     "ipa" = "Baseline (KM) score: 0"
   )
 )
