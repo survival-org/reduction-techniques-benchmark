@@ -73,7 +73,7 @@ measures_labels = c(
 captions = c(
   "harrell_c" = "Higher is better",
   "isbs" = "Lower is better",
-  "ipa" = "Lower is better"
+  "ipa" = "Higher is better"
 )
 
 subtitles = c(
