@@ -5,7 +5,6 @@ library(pammtools)
 library(flexsurv)
 library(simsurv)
 
-
 # function to simulate correlated variables
 simulate_correlated_variables <- function(n_variables, n_samples) {
   cor_mat <- matrix(0.1, nrow = n_variables, ncol = n_variables)
@@ -28,8 +27,7 @@ simulate_correlated_variables <- function(n_variables, n_samples) {
   df_noise
 }
 
-
-## Time-varying effects
+# synthetic-tve ----------------------------------------------------------
 set.seed(160932)
 
 n = 2000
@@ -75,55 +73,55 @@ surv_df <- surv_df %>%
   ) %>%
   select(-cens, -id)
 
-
 saveRDS(surv_df, here::here("datasets/synthetic-tve.rds"))
 
-
+# synthetic-hdi ----------------------------------------------------------
 # genetic data with high-dim interactions
-
-data("eHGDP", package = "adegenet")
-synth_df_genetic <- na.omit(as.data.frame(eHGDP@tab)[, 1:100])
-# synth_df_genetic = synth_df_genetic[, colSums(synth_df_genetic) > 50]
-synth_df_genetic <- cbind(
-  synth_df_genetic,
-  hdi = Reduce(
-    "*",
-    synth_df_genetic[, c("loc-6.175", "loc-8.183", "loc-8.187")]
+# Something wrong here, needs further investigation
+if (FALSE) {
+  data("eHGDP", package = "adegenet")
+  synth_df_genetic <- na.omit(as.data.frame(eHGDP@tab)[, 1:100])
+  # synth_df_genetic = synth_df_genetic[, colSums(synth_df_genetic) > 50]
+  synth_df_genetic <- cbind(
+    synth_df_genetic,
+    hdi = Reduce(
+      "*",
+      synth_df_genetic[, c("loc-6.175", "loc-8.183", "loc-8.187")]
+    )
   )
-)
-colnames(synth_df_genetic) = gsub("-", "_", colnames(synth_df_genetic))
+  colnames(synth_df_genetic) = gsub("-", "_", colnames(synth_df_genetic))
+
+  # specify model with two main effects and independent high-dim interaction
+  betas = rep(0, ncol(synth_df_genetic))
+  names(betas) = colnames(synth_df_genetic)
+  betas[c("loc_6.159", "loc_2.288")] = c(-.2, .2)
+  betas["hdi"] = -.4
+  synth_surv_genetic = simsurv(
+    dist = "weibull",
+    lambdas = .1,
+    gammas = 1.5,
+    maxt = 5,
+    betas = betas,
+    x = synth_df_genetic
+  )
+  # summary(synth_surv_genetic$eventtime)
+  # table(synth_surv_genetic$status)
+  synth_df_genetic = cbind(
+    synth_df_genetic,
+    synth_surv_genetic[, c("status", "eventtime")]
+  )
+  # m = survival::survreg(Surv(eventtime, status) ~ ., data = synth_df_genetic, dist = "weibull")
+  # summary(m)
+
+  # need names time, status for our setup for consistency
+  synth_df_genetic <- synth_df_genetic |>
+    rename(time = eventtime)
+
+  saveRDS(synth_df_genetic, here::here("datasets/synthetic-hdi.rds"))
+}
 
 
-# specify model with two main effects and independent high-dim interaction
-betas = rep(0, ncol(synth_df_genetic))
-names(betas) = colnames(synth_df_genetic)
-betas[c("loc_6.159", "loc_2.288")] = c(-.2, .2)
-betas["hdi"] = -.4
-synth_surv_genetic = simsurv(
-  dist = "weibull",
-  lambdas = .1,
-  gammas = 1.5,
-  maxt = 5,
-  betas = betas,
-  x = synth_df_genetic
-)
-# summary(synth_surv_genetic$eventtime)
-# table(synth_surv_genetic$status)
-synth_df_genetic = cbind(
-  synth_df_genetic,
-  synth_surv_genetic[, c("status", "eventtime")]
-)
-# m = survival::survreg(Surv(eventtime, status) ~ ., data = synth_df_genetic, dist = "weibull")
-# summary(m)
-
-# need names time, status for our setup for consistency
-synth_df_genetic <- synth_df_genetic |>
-  rename(time = eventtime)
-
-saveRDS(synth_df_genetic, here::here("datasets/synthetic-hdi.rds"))
-
-
-# break point data
+# synthetic-breakpoint ---------------------------------------------------
 
 n <- 2000
 # create data set with variables which will affect the hazard rate.
