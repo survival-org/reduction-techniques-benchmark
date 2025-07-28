@@ -1,7 +1,15 @@
 library(ggplot2)
 library(dplyr, warn.conflicts = FALSE)
+scores_file = fs::path(here::here("results", conf$reg_name), "scores.rds")
 
-scores = readRDS(fs::path(here::here("results", conf$reg_name), "scores.rds"))
+if (!file.exists(scores_file)) {
+  cli::cli_abort(c(
+    x = "Scores file not found at {.file {fs::path_rel(scores_file)}}",
+    i = "Run {.file results-processing.R} first to aggregate results from batchtools!"
+  ))
+}
+
+scores = readRDS(scores_file)
 
 scores_long = scores |>
   tidyr::pivot_longer(
