@@ -10,6 +10,8 @@ if (!file.exists(scores_file)) {
 }
 
 scores = readRDS(scores_file)
+# Remove results for broken task
+scores = scores[task_id != "synthetic-hdi"]
 
 scores_long = scores |>
   tidyr::pivot_longer(
@@ -29,7 +31,6 @@ scores_long = scores |>
 
 task_ids = c(
   "synthetic-breakpoint",
-  "synthetic-hdi",
   "synthetic-tve",
   "cat_adoption",
   "wa_churn",
@@ -129,7 +130,7 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
     p,
     name = glue::glue("aggr_{eval_meas_idx}"),
     width = 9,
-    height = 6
+    height = 4
   )
 }
 
@@ -152,7 +153,7 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
       fill = learner_id,
       color = after_scale(colorspace::darken(fill, amount = 0.2))
     )) +
-    facet_wrap(vars(task_id), ncol = 2, scales = "free") +
+    facet_wrap(vars(task_id), ncol = 3, scales = "free") +
     geom_boxplot(alpha = 2 / 3, show.legend = FALSE) +
     scale_color_manual(
       values = learner_colors,
@@ -177,8 +178,8 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   save_plot(
     p,
     name = glue::glue("scores_per_task_{eval_meas_idx}"),
-    width = 9,
-    height = 12
+    width = 11,
+    height = 7
   )
 }
 
@@ -196,7 +197,7 @@ tasktab |>
   ) |>
   kableExtra::kbl(
     col.names = c("Task", "N", "p", "Events", "Cens. %", "Repeats"),
-    caption = "Tasks used in benchmark comparison \\label{tab:bm-tasks}",
+    caption = "Tasks used in benchmark comparison including number of observations (N), features (p), observed events, censoring rate, and number of repeats for outer repeated cross-validation used for evaluation.\\label{tab:bm-tasks}",
     booktabs = TRUE,
     format = "latex",
     linesep = ""
@@ -208,8 +209,9 @@ lrntab |>
   select(id, package, base_lrn, params) |>
   kableExtra::kbl(
     col.names = c("ID", "Package", "mlr3 ID", "# Parameters"),
-    caption = "Learnes and associated mlr3 IDs and source R packages used in benchmark comparison \\label{tab:bm-learners}",
+    caption = "Learners and associated mlr3 IDs and implementing R packages used in benchmark comparison, with the number of explicitly tuned hyperparameters. Note \\texttt{cv.glmnet} internally tunes the \\texttt{lambda} regularization parameter. \\label{tab:bm-learners}",
     booktabs = TRUE,
+    linesep = "",
     format = "latex"
   ) |>
   save_table(name = "learners")
@@ -241,19 +243,19 @@ tbl_scores = scores_long |>
   ungroup()
 
 tbl_scores |>
-  select(-task_id) |>
+  select(-task_id, -ipa) |>
   kableExtra::kbl(
     caption = "Mean (SD) of evaluation scores for each learner and task. Scores scaled by 100 for readability.\\label{tab:bm-scores}",
     col.names = c(
       "Learner",
       "Harrell's C",
-      "ISBS",
-      "IPA"
+      "ISBS"
     ),
     booktabs = TRUE,
+    longtable = TRUE,
     format = "latex"
   ) |>
-  kableExtra::kable_styling(latex_options = c("striped")) |>
+  kableExtra::kable_styling(latex_options = c("striped", "repeat_header")) |>
   kableExtra::pack_rows(index = table(tbl_scores$task_id)) |>
   save_table(name = "scores")
 
@@ -284,13 +286,13 @@ tbl_aggr = scores_long |>
   ungroup()
 
 tbl_aggr |>
+  select(-ipa) |>
   kableExtra::kbl(
     caption = "Mean (SD) of evaluation scores aggregated by learner. Scores scaled by 100 for readability.\\label{tab:bm-aggr}",
     col.names = c(
       "Learner",
       "Harrell's C",
-      "ISBS",
-      "IPA"
+      "ISBS"
     ),
     booktabs = TRUE,
     linesep = "",

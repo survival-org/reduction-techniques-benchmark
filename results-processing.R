@@ -36,7 +36,7 @@ eval_measures = list(
 
 names(eval_measures) <- mlr3misc::ids(eval_measures)
 
-future::plan("multisession", workers = 2)
+future::plan("multicore", workers = 2)
 # for (tune_meas_idx in c("harrell_c", "isbs")) {
 scores_list = future.apply::future_lapply(
   c("harrell_c", "isbs"),
