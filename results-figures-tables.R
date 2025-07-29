@@ -221,19 +221,22 @@ lrntab |>
 tbl_scores = scores_long |>
   group_by(learner_id, task_id, eval_measure) |>
   summarise(
-    score_mean = mean(score),
-    score_sd = sd(score),
+    score_mean = mean(score, na.rm = TRUE),
+    score_sd = sd(score, na.rm = TRUE),
+    score_median = median(score, na.rm = TRUE),
+    score_q25 = quantile(score, prob = 0.25, na.rm = TRUE),
+    score_q75 = quantile(score, prob = 0.75, na.rm = TRUE),
     .groups = "drop"
   ) |>
+  mutate(across(where(is.numeric), \(x) 100 * round(x, 4))) |>
   mutate(
-    score_fmt = glue::glue(
-      "{round(100 * score_mean, 2)} ({round(100 * score_sd, 2)})"
-    )
+    score_meansd = glue::glue("{score_mean} ({score_sd})"),
+    score_medianq = glue::glue("{score_median} [{score_q25}, {score_q75}]")
   ) |>
   tidyr::pivot_wider(
     id_cols = c("learner_id", "task_id"),
     names_from = "eval_measure",
-    values_from = "score_fmt"
+    values_from = "score_meansd" #, "score_medianq")
   ) |>
   select(task_id, learner_id, harrell_c, isbs, ipa) |>
   mutate(
@@ -265,19 +268,22 @@ tbl_scores |>
 tbl_aggr = scores_long |>
   group_by(learner_id, eval_measure) |>
   summarise(
-    score_mean = mean(score),
-    score_sd = sd(score),
+    score_mean = mean(score, na.rm = TRUE),
+    score_sd = sd(score, na.rm = TRUE),
+    score_median = median(score, na.rm = TRUE),
+    score_q25 = quantile(score, prob = 0.25, na.rm = TRUE),
+    score_q75 = quantile(score, prob = 0.75, na.rm = TRUE),
     .groups = "drop"
   ) |>
+  mutate(across(where(is.numeric), \(x) 100 * round(x, 4))) |>
   mutate(
-    score_fmt = glue::glue(
-      "{round(100 * score_mean, 2)} ({round(100 * score_sd, 2)})"
-    )
+    score_meansd = glue::glue("{score_mean} ({score_sd})"),
+    score_medianq = glue::glue("{score_median} [{score_q25}, {score_q75}]")
   ) |>
   tidyr::pivot_wider(
     id_cols = c("learner_id"),
     names_from = "eval_measure",
-    values_from = "score_fmt"
+    values_from = "score_meansd"
   ) |>
   select(learner_id, harrell_c, isbs, ipa) |>
   mutate(
