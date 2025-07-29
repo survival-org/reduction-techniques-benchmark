@@ -189,6 +189,7 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
 
 tasktab = load_tasktab()
 tasktab |>
+  filter(task_id != "synthetic-hdi") |>
   arrange(task_id) |>
   select(task_id, n, p, events, censprop) |>
   mutate(
