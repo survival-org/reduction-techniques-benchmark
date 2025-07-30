@@ -363,3 +363,49 @@ list(archives_harrell_c, archives_isbs) |>
   ) |>
   kableExtra::kable_styling() |>
   save_table("errors")
+
+# Runtime ----------------------------------------------------------------
+
+runtime = readRDS("results/production/runtime.rds")
+
+p = runtime |>
+  filter(task_id %in% task_ids) |>
+  # group_by(learner_id, task_id) |>
+  mutate(
+    learner_id = factor(learner_id, levels = rev(learner_ids)),
+    task_id = factor(task_id, levels = task_ids)
+  ) |>
+  ggplot(aes(
+    x = time.running.hours,
+    y = learner_id,
+    fill = learner_id,
+    color = after_scale(colorspace::darken(fill, amount = 0.2))
+  )) +
+  facet_wrap(vars(task_id), ncol = 3, scales = "free") +
+  geom_boxplot(alpha = 2 / 3, show.legend = FALSE) +
+  scale_color_manual(
+    values = learner_colors,
+    aesthetics = c("color", "fill")
+  ) +
+  labs(
+    title = glue::glue(
+      "Runtime per learner per nested resampling iteration"
+    ),
+    subtitle = "",
+    x = "Runtime (hours)",
+    y = NULL,
+    caption = "Combined measurements for both tuning measures"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title.position = "plot")
+
+if (interactive()) {
+  print(p)
+}
+
+save_plot(
+  p,
+  name = "runtime-per-task",
+  width = 11,
+  height = 7
+)
