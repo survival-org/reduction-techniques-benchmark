@@ -198,7 +198,7 @@ tasktab |>
   ) |>
   kableExtra::kbl(
     col.names = c("Task", "N", "p", "Events", "Cens. %", "Repeats"),
-    caption = "Tasks used in benchmark comparison including number of observations (N), features (p), observed events, censoring rate, and number of repeats for outer repeated cross-validation used for evaluation.\\label{tab:bm-tasks}",
+    caption = "Tasks used in benchmark comparison including number of observations (N), features (p), and observed events, the censoring rate, and number of repeats for outer repeated cross-validation used for evaluation.\\label{tab:bm-tasks}",
     booktabs = TRUE,
     format = "latex",
     linesep = ""
@@ -210,7 +210,7 @@ lrntab |>
   select(id, package, base_lrn, params) |>
   kableExtra::kbl(
     col.names = c("ID", "Package", "mlr3 ID", "# Parameters"),
-    caption = "Learners and associated mlr3 IDs and implementing R packages used in benchmark comparison, with the number of explicitly tuned hyperparameters. Note \\texttt{cv.glmnet} internally tunes the \\texttt{lambda} regularization parameter. \\label{tab:bm-learners}",
+    caption = "Learners used in the benchmark comparison, including their \\textit{mlr3} IDs, implementing R packages, and the number of explicitly tuned hyperparameters. Note \\texttt{cv.glmnet} internally tunes the \\texttt{lambda} regularization parameter.\\label{tab:bm-learners}",
     booktabs = TRUE,
     linesep = "",
     format = "latex"
