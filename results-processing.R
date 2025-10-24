@@ -5,7 +5,7 @@ library(data.table)
 # Process registry -------------------------------------------------------
 reg = loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
 tab = collect_job_table(
-  optional_columns = c("submitted", "done", "time.running", "memory")
+  optional_columns = c("submitted", "done", "time.running", "mem.used")
 )
 
 # Store reduced table with runtime info
@@ -17,7 +17,8 @@ tab_runtime = tab[, .(
   repl,
   submitted,
   done,
-  time.running
+  time.running,
+  mem.used
 )]
 tab_runtime[, time.running.hours := as.numeric(time.running, unit = "hours")]
 save_obj(tab_runtime, "runtime")

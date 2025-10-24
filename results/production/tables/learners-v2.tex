@@ -1,0 +1,20 @@
+\begin{table}
+
+\caption{Learners used in the benchmark comparison, including their \textit{mlr3} IDs, implementing R packages, and the number of explicitly tuned hyperparameters. Note \texttt{cv.glmnet} internally tunes the \texttt{lambda} regularization parameter.\label{tab:bm-learners}}
+\centering
+\begin{tabular}[t]{lllr}
+\toprule
+ID & Package & mlr3 ID & \# Parameters\\
+\midrule
+KM & survival & surv.kaplan & 0\\
+CPH & survival & surv.coxph & 0\\
+RIDGE & glmnet & surv.cv\_glmnet & 0\\
+GLMN & glmnet & surv.cv\_glmnet & 1\\
+RFSRC & randomForestSRC & surv.rfsrc & 5\\
+RFSRC\_DT & randomForestSRC & classif.rfsrc & 5\\
+XGBCox & xgboost & surv.xgboost.cox & 5\\
+XGB\_PEM & xgboost & regr.xgboost & 5\\
+XGB\_DT & xgboost & classif.xgboost & 5\\
+\bottomrule
+\end{tabular}
+\end{table}

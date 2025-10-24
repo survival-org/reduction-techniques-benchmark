@@ -1,5 +1,6 @@
 id,base_id,base_lrn,params,encode,internal_cv,grid,scale,package,has_threads
 KM,kaplan,surv.kaplan,0,FALSE,FALSE,FALSE,FALSE,survival,FALSE
+CPH,cph,surv.coxph,0,FALSE,FALSE,FALSE,FALSE,survival,FALSE
 RIDGE,cv_glmnet,surv.cv_glmnet,0,FALSE,FALSE,FALSE,FALSE,glmnet,FALSE
 GLMN,cv_glmnet,surv.cv_glmnet,1,FALSE,TRUE,FALSE,FALSE,glmnet,FALSE
 RFSRC,rfsrc,surv.rfsrc,5,FALSE,FALSE,FALSE,FALSE,randomForestSRC,TRUE

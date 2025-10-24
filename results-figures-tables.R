@@ -10,8 +10,6 @@ if (!file.exists(scores_file)) {
 }
 
 scores = readRDS(scores_file)
-# Remove results for broken task
-scores = scores[task_id != "synthetic-hdi"]
 
 scores_long = scores |>
   tidyr::pivot_longer(
@@ -131,6 +129,7 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   save_plot(
     p,
     name = glue::glue("aggr_{eval_meas_idx}"),
+    suffix = "v2",
     width = 9,
     height = 4
   )
@@ -180,6 +179,7 @@ for (eval_meas_idx in c("harrell_c", "isbs", "ipa")) {
   save_plot(
     p,
     name = glue::glue("scores_per_task_{eval_meas_idx}"),
+    suffix = "v2",
     width = 11,
     height = 7
   )
@@ -205,7 +205,7 @@ tasktab |>
     format = "latex",
     linesep = ""
   ) |>
-  save_table(name = "tasks")
+  save_table(name = "tasks", suffix = "v2")
 
 lrntab = load_lrntab()
 lrntab |>
@@ -217,7 +217,7 @@ lrntab |>
     linesep = "",
     format = "latex"
   ) |>
-  save_table(name = "learners")
+  save_table(name = "learners", suffix = "v2")
 
 # Scores aggregated by learner, task
 tbl_scores = scores_long |>
@@ -263,7 +263,7 @@ tbl_scores |>
   ) |>
   kableExtra::kable_styling(latex_options = c("striped", "repeat_header")) |>
   kableExtra::pack_rows(index = table(tbl_scores$task_id)) |>
-  save_table(name = "scores")
+  save_table(name = "scores", suffix = "v2")
 
 # Aggregated by learner
 
@@ -308,7 +308,7 @@ tbl_aggr |>
     format = "latex"
   ) |>
   kableExtra::kable_styling() |>
-  save_table(name = "aggr")
+  save_table(name = "aggr", suffix = "v2")
 
 # Error counting in archives -----------------------------------------------
 archives_harrell_c = readRDS(fs::path(
@@ -364,7 +364,7 @@ list(archives_harrell_c, archives_isbs) |>
     format = "latex"
   ) |>
   kableExtra::kable_styling() |>
-  save_table("errors")
+  save_table("errors", suffix = "v2")
 
 # Runtime ----------------------------------------------------------------
 
@@ -408,6 +408,47 @@ if (interactive()) {
 save_plot(
   p,
   name = "runtime-per-task",
+  suffix = "v2",
   width = 11,
   height = 7
 )
+
+runtime |>
+  mutate(
+    time_minutes = as.numeric(time.running) / 60,
+    mem_mb = mem.used
+  ) |>
+  tidyr::pivot_longer(
+    cols = c("time_minutes", "mem_mb"),
+    names_to = "metric"
+  ) |>
+  group_by(learner_id, metric) |>
+  summarize(
+    mean = mean(value),
+    sd = sd(value),
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), \(x) round(x, 1))) |>
+  mutate(
+    learner_id = factor(learner_id, levels = learner_ids),
+    fmt = glue::glue("{mean} ({sd})")
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = "learner_id",
+    names_from = "metric",
+    values_from = "fmt"
+  ) |>
+  arrange(learner_id) |>
+  kableExtra::kbl(
+    caption = "Runtime (mean (SD), minutes) and memory usage (mean (sd), MB) per learner across outer resampling iterations. This includes tuning (if applicable) and final model fitting.\\label{tab:bm-runtime}",
+    col.names = c(
+      "Learner",
+      "Memory (MB)",
+      "Runtime (Minutes)"
+    ),
+    booktabs = TRUE,
+    linesep = "",
+    format = "latex"
+  ) |>
+  kableExtra::kable_styling() |>
+  save_table("runtime", suffix = "v2")

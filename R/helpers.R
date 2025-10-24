@@ -158,12 +158,12 @@ load_task_data = function() {
 #' @return Integer number of repeats
 assign_repeats = function(num_events) {
   data.table::fcase(
-    num_events < 500                      ,
-                                        3 ,
-    num_events >= 500 & num_events < 1000 ,
-                                        2 ,
-    num_events > 1000                     ,
-                                        1
+    num_events < 500,
+    3,
+    num_events >= 500 & num_events < 1000,
+    2,
+    num_events > 1000,
+    1
   )
 }
 
@@ -178,13 +178,14 @@ assign_repeats = function(num_events) {
 #' save_lrntab()
 save_lrntab <- function(path = here::here("tables", "learners.csv")) {
   require(mlr3proba)
+  requireNamespace("mlr3learners")
   requireNamespace("mlr3extralearners", quietly = TRUE)
   ensure_directory(path)
 
   lrntab <- mlr3misc::rowwise_table(
     ~id,       ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale, ~package,
     "KM"       , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE, "survival",
-    "CPH",     , "cph"        , "surv.coxph",       , 0,     FALSE,  FALSE ,        FALSE, FALSE, "survival",    
+    "CPH"      , "cph"        , "surv.coxph"        , 0,     FALSE,  FALSE ,        FALSE, FALSE, "survival",    
     "RIDGE"    , "cv_glmnet"  , "surv.cv_glmnet"    , 0 ,    FALSE , FALSE ,        FALSE, FALSE, "glmnet",
     "GLMN"     , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE, "glmnet",
 
@@ -376,11 +377,13 @@ save_obj = function(obj, name = NULL, prefix = "") {
 #' Utility to save ggplot object as png
 #' @param plot A ggplot2 plot.
 #' @param name Name of output file. `.tex` will be appended automatically.
+#' @param suffix Suffix to append to `name`. Example: `"v2"` for 2nd version after review.
 #' @param width,heigh,... Passed to `ggplot2::ggsave()`
 #' @param format File extensin for corresponding output format, e.g. "png", "svg", "pdf"
 save_plot = function(
   plot,
   name,
+  suffix = NULL,
   width = 9,
   height = 6,
   ...,
@@ -388,6 +391,10 @@ save_plot = function(
 ) {
   result_dir = fs::path(conf$result_path, "figures")
   ensure_directory(result_dir)
+
+  if (!is.null(suffix)) {
+    name = paste(name, suffix, sep = "-")
+  }
 
   purrr::walk(format, \(x) {
     file_out = fs::path(result_dir, name, ext = x)
@@ -410,10 +417,15 @@ save_plot = function(
 #' Used in conjunction with kableExtra
 #' @param tbl A LaTeX-formatted table as produced by e.g. knitr::kable() and kableExtra
 #' @param name Name of output file. `.tex` will be appended automatically.
-save_table = function(tbl, name) {
+#' @param suffix Suffix to append to `name`. Example: `"v2"` for 2nd version after review.
+save_table = function(tbl, name, suffix = NULL) {
   result_dir = fs::path(conf$result_path, "tables")
-
   ensure_directory(result_dir)
+
+  if (!is.null(suffix)) {
+    name = paste(name, suffix, sep = "-")
+  }
+
   file_out = fs::path(result_dir, name, ext = "tex")
   writeLines(tbl, con = file_out)
 }
