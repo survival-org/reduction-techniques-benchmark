@@ -43,6 +43,7 @@ task_ids = c(
 
 learner_ids = c(
   "KM",
+  "CPH",
   "RIDGE",
   "GLMN",
   "RFSRC",
@@ -55,6 +56,7 @@ learner_ids = c(
 # https://coolors.co/686868-abede2-47d7bf-fe7171-a20101-86a4d5-5982c5-2a4879
 learner_colors = c(
   "KM" = "#686868",
+  "CPH" = "#8AABA5",
   "RIDGE" = "#89E6D7",
   "GLMN" = "#47D7BF",
   "RFSRC" = "#FE7171",
@@ -389,7 +391,7 @@ p = runtime |>
   ) +
   labs(
     title = glue::glue(
-      "Runtime per learner per nested resampling iteration"
+      "Runtime per learner per outer resampling iteration"
     ),
     subtitle = "",
     x = "Runtime (hours)",

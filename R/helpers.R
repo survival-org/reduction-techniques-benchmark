@@ -158,12 +158,12 @@ load_task_data = function() {
 #' @return Integer number of repeats
 assign_repeats = function(num_events) {
   data.table::fcase(
-    num_events < 500,
-    3,
-    num_events >= 500 & num_events < 1000,
-    2,
-    num_events > 1000,
-    1
+    num_events < 500                      ,
+                                        3 ,
+    num_events >= 500 & num_events < 1000 ,
+                                        2 ,
+    num_events > 1000                     ,
+                                        1
   )
 }
 
@@ -184,6 +184,7 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
   lrntab <- mlr3misc::rowwise_table(
     ~id,       ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale, ~package,
     "KM"       , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE, "survival",
+    "CPH",     , "cph"        , "surv.coxph",       , 0,     FALSE,  FALSE ,        FALSE, FALSE, "survival",    
     "RIDGE"    , "cv_glmnet"  , "surv.cv_glmnet"    , 0 ,    FALSE , FALSE ,        FALSE, FALSE, "glmnet",
     "GLMN"     , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE, "glmnet",
 

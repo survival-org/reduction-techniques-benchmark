@@ -73,6 +73,8 @@ for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan", id = "kaplan"),
 
+    CPH = bl("surv.coxph", id = "cph"),
+
     RIDGE = bl("surv.cv_glmnet", id = "cv_glmnet", alpha = 0, .encode = TRUE),
 
     GLMN = wrap_auto_tune(
